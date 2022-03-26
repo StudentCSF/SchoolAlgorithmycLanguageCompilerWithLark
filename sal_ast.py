@@ -241,14 +241,14 @@ class ChildListNode(AstNode):
 
     @property
     def childs(self) -> Tuple[AstNode, ...]:
-        return *self.childs_,
+        return self.childs_,
 
     def __str__(self) -> str:
         return str(self.node_name)
 
 
 class FuncDeclNode(StmtNode):
-    def __init__(self, name: IdentNode, params: Optional[List[IdentNode]], body: Optional['StmtListNode']):
+    def __init__(self, name: IdentNode, params: List[IdentNode], body: 'StmtListNode'):
         super().__init__()
         self.name = name
         self.params = params

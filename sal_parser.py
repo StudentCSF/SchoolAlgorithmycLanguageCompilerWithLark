@@ -106,13 +106,6 @@ class MelASTBuilder(InlineTransformer):
                 return CompareOpNode(op, *args)
 
             return get_compare_op_node
-        if item == 'func_decl':
-            def get_func_decl_node(*args):
-                #op = FuncDeclNode()
-                print(args)
-                return FuncDeclNode(*args)
-
-            return get_func_decl_node
         else:
             def get_node(*args):
                 cls = eval(''.join(x.capitalize() or '_' for x in item.split('_')) + 'Node')

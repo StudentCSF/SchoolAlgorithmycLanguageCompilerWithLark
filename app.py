@@ -4,7 +4,8 @@ import sal_parser
 
 def main():
     prog = sal_parser.parse('''
-    
+    алг func(e)
+        нач
             ввод a ввод b  /* comment 1
             ввод c
             */
@@ -28,7 +29,7 @@ def main():
             нц
                 t := func
             кц_при t >= 2
-        
+        кон
     ''')
     print(*prog.tree, sep=os.linesep)
 
