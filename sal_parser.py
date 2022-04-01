@@ -68,10 +68,10 @@ parser = Lark('''
         | func_call
         
 
-    if:  "если" bin_expr "то" stmt ("иначе" stmt)? "все"
+    if:  "если" bin_expr "то" stmt_list ("иначе" stmt_list)? "все"
 
-    if2:  "если" bin_expr "то" stmt "иначе" stmt "все"  -> if
-        | "если" bin_expr "то" stmt "все"             -> if
+    if2:  "если" bin_expr "то" stmt_list "иначе" stmt_list "все"  -> if
+        | "если" bin_expr "то" stmt_list "все"             -> if
 
     while: "нц" "пока" bin_expr (stmt_list)? "кц"
     
@@ -92,6 +92,7 @@ parser = Lark('''
         | cycle
         | var_decl
         | func_decl
+        | func_call
         
 
     stmt_list: stmt*
