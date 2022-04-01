@@ -5,7 +5,7 @@ from enum import Enum
 
 class AstNode(ABC):
     @property
-    def childs(self) -> Tuple['AstNode', ...]:
+    def children(self) -> Tuple['AstNode', ...]:
         return ()
 
     @abstractmethod
@@ -15,7 +15,7 @@ class AstNode(ABC):
     @property
     def tree(self) -> [str, ...]:
         res = [str(self)]
-        childs = self.childs
+        childs = self.children
         for i, child in enumerate(childs):
             ch0, ch = '├', '│'
             if i == len(childs) - 1:
@@ -25,10 +25,10 @@ class AstNode(ABC):
 
     def visit(self, func: Callable[['AstNode'], None]) -> None:
         func(self)
-        map(func, self.childs)
+        map(func, self.children)
 
     def __getitem__(self, index):
-        return self.childs[index] if index < len(self.childs) else None
+        return self.children[index] if index < len(self.children) else None
 
 
 class ExprNode(AstNode):
@@ -72,7 +72,7 @@ class BinOpNode(ExprNode):
         self.arg2 = arg2
 
     @property
-    def childs(self) -> Tuple[ValueNode, ValueNode]:
+    def children(self) -> Tuple[ValueNode, ValueNode]:
         return self.arg1, self.arg2
 
     def __str__(self) -> str:
@@ -95,7 +95,7 @@ class CompareOpNode(ExprNode):
         self.arg2 = arg2
 
     @property
-    def childs(self) -> Tuple[ValueNode, ValueNode]:
+    def children(self) -> Tuple[ValueNode, ValueNode]:
         return self.arg1, self.arg2
 
     def __str__(self) -> str:
@@ -111,7 +111,7 @@ class InputNode(StmtNode):
         self.var = var
 
     @property
-    def childs(self) -> Tuple[IdentNode]:
+    def children(self) -> Tuple[IdentNode]:
         return self.var,
 
     def __str__(self) -> str:
@@ -123,11 +123,26 @@ class OutputNode(StmtNode):
         self.arg = arg
 
     @property
-    def childs(self) -> Tuple[ValueNode]:
+    def children(self) -> Tuple[ValueNode]:
         return self.arg,
 
     def __str__(self) -> str:
         return 'вывод'
+
+
+'''
+class OutputNode(StmtNode):
+    def __init__(self, arg: ValueNode, args: Optional[List[ExprNode]] = None):
+        self.arg = arg
+        self.args = args
+
+    @property
+    def childs(self) -> tuple[ValueNode, AstNode]:
+        return self.arg, not_none(self.args),
+
+    def __str__(self) -> str:
+        return 'вывод'
+'''
 
 
 class AssignNode(StmtNode):
@@ -137,7 +152,7 @@ class AssignNode(StmtNode):
         self.val = val
 
     @property
-    def childs(self) -> Tuple[IdentNode, ValueNode]:
+    def children(self) -> Tuple[IdentNode, ValueNode]:
         return self.var, self.val
 
     def __str__(self) -> str:
@@ -152,7 +167,7 @@ class IfNode(StmtNode):
         self.else_stmt = else_stmt
 
     @property
-    def childs(self) -> Tuple[ExprNode, StmtNode, Optional[StmtNode]]:
+    def children(self) -> tuple[ExprNode | StmtNode, ...]:
         return (self.cond, self.then_stmt) + ((self.else_stmt,) if self.else_stmt else tuple())
 
     def __str__(self) -> str:
@@ -170,7 +185,7 @@ class WhileNode(StmtNode):
         self.body = body
 
     @property
-    def childs(self) -> Tuple[ExprNode, StmtNode]:
+    def children(self) -> tuple[ExprNode, AstNode]:
         return self.cond, not_none(self.body)
 
     def __str__(self) -> str:
@@ -184,7 +199,7 @@ class DoWhileNode(StmtNode):
         self.body = body
 
     @property
-    def childs(self) -> Tuple[ExprNode, StmtNode]:
+    def children(self) -> tuple[ExprNode, AstNode]:
         return self.cond, not_none(self.body)
 
     def __str__(self) -> str:
@@ -200,7 +215,7 @@ class ForNode(StmtNode):
         self.body = body
 
     @property
-    def childs(self) -> Tuple[AstNode, AstNode, AstNode, StmtNode]:
+    def children(self) -> Tuple[AstNode, AstNode, AstNode, StmtNode]:
         return not_none(self.init), not_none(self.cond), not_none(self.step), self.body
 
     def __str__(self) -> str:
@@ -213,7 +228,7 @@ class StmtListNode(AstNode):
         self.exprs = exprs
 
     @property
-    def childs(self) -> Tuple[AstNode]:
+    def children(self) -> Tuple[AstNode]:
         return self.exprs
 
     def __str__(self) -> str:
@@ -227,36 +242,64 @@ class FuncCallNode(ExprNode):
         self.params = params
 
     @property
-    def childs(self) -> Tuple[ExprNode, ...]:
+    def children(self) -> Tuple[ExprNode, ...]:
         return self.params
 
     def __str__(self) -> str:
-        return str(self.name)
+        return "call_" + str(self.name)
 
 
 class ChildListNode(AstNode):
-    def __init__(self, node_name: str, childs: List[AstNode]):
+    def __init__(self, node_name: str, childs: Optional[List[AstNode]]):
         self.node_name = node_name
         self.childs_ = childs
 
     @property
-    def childs(self) -> Tuple[AstNode, ...]:
-        return self.childs_,
+    def children(self) -> Tuple[AstNode, ...]:
+        return not_none(self.childs_),
 
     def __str__(self) -> str:
         return str(self.node_name)
 
 
 class FuncDeclNode(StmtNode):
-    def __init__(self, name: IdentNode, params: List[IdentNode], body: 'StmtListNode'):
+    def __init__(self, name: IdentNode, params: Optional[List[IdentNode]] = None,
+                 body: Optional['StmtListNode'] = None):
         super().__init__()
         self.name = name
-        self.params = params
-        self.body = body
+        if body is None:
+            self.body = params
+            self.params = None
+        else:
+            self.params = params
+            self.body = body
 
     @property
-    def childs(self) -> Tuple[IdentNode, AstNode, 'StmtListNode']:
-        return self.name, ChildListNode('арг', self.params), self.body
+    def children(self) -> tuple[IdentNode, AstNode, AstNode]:
+        return self.name, not_none(ChildListNode('арг', self.params)), not_none(ChildListNode('тело', self.body))
 
     def __str__(self) -> str:
         return 'алг'
+
+
+class Type(Enum):
+    INT = 'цел'
+    FLOAT = 'вещ'
+    STR = 'лит'
+    CHAR = 'сим'
+    BOOL = 'лог'
+
+
+class VarDeclNode(StmtNode):
+    def __init__(self, type: Type, ident: IdentNode, assign: Optional[AssignNode]):
+        super().__init__()
+        self.type = type
+        self.ident = ident
+        self.assign = assign
+
+    @property
+    def children(self) -> tuple[IdentNode, AstNode]:
+        return self.ident, not_none(self.assign)
+
+    def __str__(self):
+        return 'перем'
