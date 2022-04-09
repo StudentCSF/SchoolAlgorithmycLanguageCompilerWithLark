@@ -31,11 +31,11 @@ class AstNode(ABC):
         return self.children[index] if index < len(self.children) else None
 
 
-class ExprNode(AstNode):
+class ExprNode(AstNode, ABC):
     pass
 
 
-class ValueNode(ExprNode):
+class ValueNode(ExprNode, ABC):
     pass
 
 
@@ -55,6 +55,15 @@ class IdentNode(ValueNode):
 
     def __str__(self) -> str:
         return str(self.name)
+
+
+class BoolNode(ValueNode):
+    def __init__(self, value: bool):
+        super().__init__()
+        self.value = value
+
+    def __str__(self) -> str:
+        return "да" if self.value else "нет"
 
 
 class BinOp(Enum):
@@ -102,7 +111,28 @@ class CompareOpNode(ExprNode):
         return str(self.op.value)
 
 
-class StmtNode(AstNode):
+class LogOp(Enum):
+    OR = 'или'
+    AND = 'и'
+    NOT = 'не'
+
+
+class LogOpNode(ExprNode):
+    def __init__(self, op: LogOp, arg1: ValueNode, arg2: Optional[ValueNode] = None):
+        super().__init__()
+        self.op = op
+        self.arg1 = arg1
+        self.arg2 = arg2
+
+    @property
+    def children(self) -> tuple['ValueNode', ...]:
+        return (self.arg1, self.arg2) if self.op.value != 'не' else (self.arg1,)
+
+    def __str__(self):
+        return self.op.value
+
+
+class StmtNode(AstNode, ABC):
     pass
 
 
@@ -119,30 +149,15 @@ class InputNode(StmtNode):
 
 
 class OutputNode(StmtNode):
-    def __init__(self, arg: ValueNode):
-        self.arg = arg
+    def __init__(self, arg: ExprNode, *args: ExprNode):
+        self.args = (arg,) + args
 
     @property
-    def children(self) -> Tuple[ValueNode]:
-        return self.arg,
+    def children(self) -> Tuple[ExprNode, ...]:
+        return self.args
 
     def __str__(self) -> str:
         return 'вывод'
-
-
-'''
-class OutputNode(StmtNode):
-    def __init__(self, arg: ValueNode, args: Optional[List[ExprNode]] = None):
-        self.arg = arg
-        self.args = args
-
-    @property
-    def childs(self) -> tuple[ValueNode, AstNode]:
-        return self.arg, not_none(self.args),
-
-    def __str__(self) -> str:
-        return 'вывод'
-'''
 
 
 class AssignNode(StmtNode):
@@ -302,4 +317,4 @@ class VarDeclNode(StmtNode):
         return self.ident, not_none(self.assign)
 
     def __str__(self):
-        return 'перем'
+        return self.type.value
