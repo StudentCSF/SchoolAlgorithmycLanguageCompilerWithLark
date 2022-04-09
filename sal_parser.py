@@ -17,7 +17,9 @@ parser = Lark('''
 
     num: NUMBER
     ident: CNAME
-    
+    string: /\".*\"+/
+    character: /\'.?'+/
+        
     true_false: "да"  -> true
             | "нет" -> false
     
@@ -25,9 +27,11 @@ parser = Lark('''
 
     ?group: num
         | ident
-        | "(" add ")"
+        | "(" or ")"
         | true_false
         | func_call
+        | string
+        | character
 
     ?mult: group
         | mult "*" group    -> mul
@@ -53,9 +57,9 @@ parser = Lark('''
     ?or: and
         | or "или" and -> or
     
-    ?func_call: ident "(" (expr ("," expr)*)? ")"
+    func_call: ident "(" (expr ("," expr)*)? ")"
     
-    ?var_decl: "сим" ident (":=" expr)?  -> char
+    var_decl: "сим" ident (":=" expr)?  -> char
         | "лит" ident (":=" expr)?       -> str
         | "цел" ident (":=" expr)?       -> int
         | "лог" ident (":=" expr)?       -> bool
@@ -103,7 +107,6 @@ class MelASTBuilder(InlineTransformer):
     def __getattr__(self, item):
         if isinstance(item, str) and item.upper() == item:
             return lambda x: x
-
         if item in ('true', 'false'):
             return lambda: BoolNode(item == 'true')
         if item in ('mul', 'div', 'add', 'sub'):

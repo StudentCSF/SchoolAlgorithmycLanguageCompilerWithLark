@@ -48,6 +48,24 @@ class NumNode(ValueNode):
         return str(self.num)
 
 
+class StringNode(ValueNode):
+    def __init__(self, str: str):
+        super().__init__()
+        self.str = str
+
+    def __str__(self):
+        return self.str
+
+
+class CharacterNode(ValueNode):
+    def __init__(self, char: str):
+        super().__init__()
+        self.char = char
+
+    def __str__(self):
+        return self.char
+
+
 class IdentNode(ValueNode):
     def __init__(self, name: str):
         super().__init__()
