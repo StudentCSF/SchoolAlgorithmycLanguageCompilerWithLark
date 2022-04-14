@@ -4,7 +4,7 @@ import sal_parser
 
 def main():
     prog = sal_parser.parse('''
-       алг Func(арг цел n)
+       алг Func(арг цел n, рез сим s)
             нач
                 цел i
                 цел n
@@ -40,6 +40,12 @@ def main():
         алг Func2()
             нач
                 вывод 31
+            кон
+            
+        алг Func3(арг лог bool, вещ t, рез сим e)
+            нач
+                нц для q от 1 до 1
+                кц
             кон
     ''')
     print(*prog.tree, sep=os.linesep)

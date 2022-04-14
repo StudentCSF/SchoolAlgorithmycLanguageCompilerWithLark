@@ -18,7 +18,8 @@ parser = Lark('''
     num: NUMBER
     ident: CNAME
     string: /\".*\"+/
-    character: /\'.?'+/
+    character: /'.?'+/
+    
         
     true_false: "да"  -> true
             | "нет" -> false
@@ -66,7 +67,6 @@ parser = Lark('''
         | "вещ" ident (":=" expr)?       -> float 
 
     ?expr: or
-        
 
     if:  "если" expr "то" stmt_list ("иначе" stmt_list)? "все"
 
@@ -83,7 +83,12 @@ parser = Lark('''
         | "нц" (stmt_list)? "кц_при" expr -> do_while
         | "нц" "для" ident "от" expr "до" expr (stmt_list)? "кц" -> for
         
-    func_decl: "алг" ident "(" ("арг" var_decl ("," var_decl)*)? ")" "нач" (stmt_list)? "кон"
+    params: "арг" var_decl ("," var_decl)*
+    
+    res: "рез" var_decl
+        
+    func_decl: "алг" ident "(" (params ",")? res ")" "нач" (stmt_list)? "кон"
+        |   "алг" ident "(" params? ")" "нач" (stmt_list)? "кон"
 
     ?stmt: "ввод" ident     -> input
         | "вывод" expr ("," expr)*     -> output
@@ -109,6 +114,7 @@ class MelASTBuilder(InlineTransformer):
             return lambda x: x
         if item in ('true', 'false'):
             return lambda: BoolNode(item == 'true')
+
         if item in ('mul', 'div', 'add', 'sub'):
             def get_bin_op_node(*args):
                 op = BinOp[item.upper()]
@@ -136,6 +142,8 @@ class MelASTBuilder(InlineTransformer):
                 return LogOpNode(op, *args)
 
             return get_log_op_node
+
+
         else:
             def get_node(*args):
                 cls = eval(''.join(x.capitalize() or '_' for x in item.split('_')) + 'Node')

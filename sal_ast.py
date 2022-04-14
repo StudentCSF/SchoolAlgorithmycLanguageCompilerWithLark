@@ -17,6 +17,7 @@ class AstNode(ABC):
         res = [str(self)]
         childs = self.children
         for i, child in enumerate(childs):
+            #if child.__str__() == '': continue
             ch0, ch = '├', '│'
             if i == len(childs) - 1:
                 ch0, ch = '└', ' '
@@ -218,8 +219,9 @@ class WhileNode(StmtNode):
         self.body = body
 
     @property
-    def children(self) -> tuple[ExprNode, AstNode]:
+    def children(self):# -> tuple[ExprNode, AstNode]:
         return self.cond, not_none(self.body)
+        #return (self.cond,) if self.body is None else self.cond, self.body
 
     def __str__(self) -> str:
         return 'пока'
@@ -295,26 +297,6 @@ class ChildListNode(AstNode):
         return str(self.node_name)
 
 
-class FuncDeclNode(StmtNode):
-    def __init__(self, name: IdentNode, params: Optional[List[IdentNode]] = None,
-                 body: Optional['StmtListNode'] = None):
-        super().__init__()
-        self.name = name
-        if body is None:
-            self.body = params
-            self.params = None
-        else:
-            self.params = params
-            self.body = body
-
-    @property
-    def children(self) -> tuple[IdentNode, AstNode, AstNode]:
-        return self.name, not_none(ChildListNode('арг', self.params)), not_none(ChildListNode('тело', self.body))
-
-    def __str__(self) -> str:
-        return 'алг'
-
-
 class Type(Enum):
     INT = 'цел'
     FLOAT = 'вещ'
@@ -331,8 +313,79 @@ class VarDeclNode(StmtNode):
         self.assign = assign
 
     @property
-    def children(self) -> tuple[IdentNode, AstNode]:
-        return self.ident, not_none(self.assign)
+    def children(self):# -> tuple[IdentNode, AstNode]:
+        #return self.ident, not_none(self.assign)
+        if self.assign is None:
+            return self.ident,
+        else:
+            return self.ident, self.assign
 
     def __str__(self):
         return self.type.value
+
+
+class ParamsNode(AstNode, ABC):
+    def __init__(self, *vars: VarDeclNode):
+        super().__init__()
+        self.vars = vars
+
+    def __str__(self):
+        return "арг"
+
+    @property
+    def children(self) -> Tuple['VarDeclNode', ...]:
+        return self.vars
+
+
+class ResNode(AstNode, ABC):
+    def __init__(self, res: VarDeclNode):
+        super().__init__()
+        self.res = res
+
+    @property
+    def children(self) -> Tuple['VarDeclNode']:
+        return self.res,
+
+    def __str__(self):
+        return 'рез'
+
+
+class FuncDeclNode(StmtNode):
+    def __init__(self, name: IdentNode, params: Optional[ParamsNode] = None, res: Optional[ResNode] = None,
+                 body: Optional['StmtListNode'] = None):
+        super().__init__()
+        self.name = name
+        self.params = params
+        self.res = res
+        self.body = body
+        if res is None and body is None and params is not None:
+            if params.__str__() != 'алг':
+                self.params = None
+                if params.__str__() == 'рез':
+                    self.res = params
+                else:
+                    self.body = params
+        elif params is not None and res is not None and body is None:
+            if params.__str__() == 'алг':
+                if res.__str__() == 'рез':
+                    self.res = res
+                else:
+                    self.body = res
+            else:
+                self.res = params
+                self.body = res
+                self.params = None
+
+    @property
+    def children(self):# -> tuple[IdentNode, AstNode, AstNode, AstNode]:
+        list = [self.name]
+        if self.params is not None:
+            list.append(self.body)
+        if self.res is not None:
+            list.append(self.res)
+        if self.body is not None:
+            list.append(self.body)
+        return tuple(list)
+
+    def __str__(self) -> str:
+        return 'алг'
