@@ -1,10 +1,9 @@
-import os
-import sal_parser
+import program
 
 
 def main():
-    prog = sal_parser.parse('''
-       алг Func(арг цел n, рез сим s)
+    prog = '''
+       алг Func(арг цел n, рез цел res)
             нач
                 цел i
                 цел n
@@ -24,14 +23,15 @@ def main():
                         нц
                             Func2()
                             вывод tuy
-                        кц_при 5>4
+                        кц_при 5>4.
                 все
                 
-                нц пока 1 < n * 10 
+                нц пока 1 < n * 10
+                    res := res + 2 
                 кц
                 
         
-                сим s := 'q'
+                s := 'q'
                 лит str := "qq"
                 вывод str, "str" + 'w'
             кон
@@ -44,11 +44,36 @@ def main():
             
         алг Func3(арг лог bool, вещ t, рез сим e)
             нач
-                нц для q от 1 до 1
+                нц для q от 1 до 2
+                    если да и q = 1
+                        то
+                            цел i := 0
+                            нц пока нет или не (2 < i)
+                                i = i + 1
+                            кц
+                            цел j := 11
+                            нц
+                                i = i * 10
+                                j := j - 1
+                            кц_при  j > 0
+                        иначе
+                            цел i := 10
+                            нц пока нет или не (2 < i)
+                                i = i + 10
+                            кц
+                            цел j := 110
+                            нц
+                                i = i * Func(j)
+                                j := j - 1
+                            кц_при  j > 0
+                    все
                 кц
             кон
-    ''')
-    print(*prog.tree, sep=os.linesep)
+    '''
+
+    prog2 = 'цел i := 2'
+    #print(*prog.tree, sep=os.linesep)
+    program.execute(prog2)
 
 
 if __name__ == "__main__":
