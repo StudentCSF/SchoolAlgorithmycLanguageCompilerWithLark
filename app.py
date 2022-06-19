@@ -6,8 +6,6 @@ def main():
        алг Func(арг цел n, рез цел res)
             нач
                 цел i
-                цел n
-                ввод n
                 лог flag := не (3 > 2 и да) или не нет
                 нц для i от 2 до n
                     если 2 < 3
@@ -16,7 +14,7 @@ def main():
                 кц
                 
                 вещ v
-                лог flag :=  5 < n
+                flag :=  5 < n
                 если n < 10
                     то v := 0.5
                     иначе v := 1.5
@@ -31,7 +29,7 @@ def main():
                 кц
                 
         
-                s := 'q'
+                сим s := 'q'
                 лит str := "qq"
                 вывод str, "str" + 'w'
             кон
@@ -71,9 +69,16 @@ def main():
             кон
     '''
 
-    prog2 = 'цел i := 2'
+    prog2 = '''цел i := 2'''
+
+    prog3 = '''алг F()
+                нач
+                    цел i := 2
+                кон
+    '''
+
     #print(*prog.tree, sep=os.linesep)
-    program.execute(prog2)
+    program.execute(prog3)
 
 
 if __name__ == "__main__":
