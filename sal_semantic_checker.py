@@ -1,13 +1,13 @@
+from tkinter.messagebox import NO
 from typing import Optional, List
 from xml.dom.minidom import CharacterData
 
 import visitor
-from sal_ast import AstNode, CharacterNode, NumNode, StmtListNode, ExprNode, FuncCallNode, ForNode, IfNode, ParamsNode, IdentNode, \
+from sal_ast import AstNode, CharacterNode, CompareOpNode, LogOpNode, NumNode, StmtListNode, ExprNode, FuncCallNode, ForNode, IfNode, ParamsNode, IdentNode, \
     BinOpNode, AssignNode, ResNode, FuncDeclNode, EMPTY_IDENT, StringNode, TypeConvertNode, TypeNode, EMPTY_STMT, BoolNode, VarDeclNode, \
     WhileNode
 from sal_semantic_base import IdentScope, ScopeType, TypeDesc, BIN_OP_TYPE_COMPATIBILITY, TYPE_CONVERTIBILITY, IdentDesc, \
     SemanticException
-
 
 def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode] = None,
                  comment: Optional[str] = None) -> ExprNode:
@@ -32,7 +32,6 @@ def type_convert(expr: ExprNode, type_: TypeDesc, except_node: Optional[AstNode]
         (except_node if except_node else expr).semantic_error('Тип {0}{2} не конвертируется в {1}'.format(
             expr.node_type, type_, ' ({})'.format(comment) if comment else ''
         ))
-
 
 class SemanticChecker:
     @visitor.on('AstNode')
@@ -60,8 +59,13 @@ class SemanticChecker:
 
     @visitor.when(IdentNode)
     def semantic_check(self, node: IdentNode, scope: IdentScope):
+        if node.name == 'res':
+            pass
         ident = scope.get_ident(node.name)
         if ident is None:
+            v = 5
+            # ident = scope.curr_func.get_ident(node.name)
+            # if ident is None:
             node.semantic_error(f'Идентификатор {node.name} не найден')
         node.node_type = ident.type
         node.node_ident = ident
@@ -101,19 +105,47 @@ class SemanticChecker:
 
         node.semantic_error(f'Оператор {node.op} не применим к типам ({node.arg1.node_type}, {node.arg2.node_type})')
 
+    @visitor.when(LogOpNode)
+    def semantic_check(self, node: LogOpNode, scope: IdentScope) -> None:
+        node.arg1.semantic_check(self, scope)
+        node.arg2.semantic_check(self, scope)
+        if node.arg1.node_type.is_simple or node.arg2.node_type.is_simple:
+            compatibility = BIN_OP_TYPE_COMPATIBILITY[node.op]
+            args_types = (node.arg1.node_type.base_type, node.arg2.node_type.base_type)
+            if args_types in compatibility:
+                node.node_type = TypeDesc.from_base_type(compatibility[args_types])
+                return
+
+    @visitor.when(CompareOpNode)
+    def semantic_check(self, node: CompareOpNode, scope: IdentScope) -> None:
+        node.arg1.semantic_check(self, scope)
+        node.arg2.semantic_check(self, scope)
+        if node.arg1.node_type.is_simple or node.arg2.node_type.is_simple:
+            compatibility = BIN_OP_TYPE_COMPATIBILITY[node.op]
+            args_types = (node.arg1.node_type.base_type, node.arg2.node_type.base_type)
+            if args_types in compatibility:
+                node.node_type = TypeDesc.from_base_type(compatibility[args_types])
+                return
+
     @visitor.when(AssignNode)
     def semantic_check(self, node: AssignNode, scope: IdentScope):
         node.var.semantic_check(self, scope)
+        if node.var.name == 'flag' and node.val is None:
+            pass
         node.val.semantic_check(self, scope)
         node.val = type_convert(node.val, node.var.node_type, node, 'присваиваемое значение')
+        if node.var.name == 'flag':
+            pass
         node.node_type = node.var.node_type
 
     @visitor.when(VarDeclNode)
     def semantic_check(self, node: VarDeclNode, scope: IdentScope):
         node.type.semantic_check(self, scope)
         for var in node.vars:
+            if var is None:
+                pass
             var_node: IdentNode = var.var if isinstance(var, AssignNode) else var
-            if var_node is None: continue
+            # if var_node is None: continue
             try:
                 scope.add_ident(IdentDesc(var_node.name, node.type.type))
             except SemanticException as e:
@@ -135,12 +167,14 @@ class SemanticChecker:
         #     node.semantic_error('Ошибка в ResNode')
         # node.res = type_convert(node.res, func.func.type.return_type, node, 'возвращаемое значение')
         # node.node_type = TypeDesc.VOID
-        node.type.semantic_check(self, scope)
-        node.name.node_type = node.type.type
-        try:
-            node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type.type, ScopeType.LOCAL))
-        except SemanticException:
-            raise node.name.semantic_error('Ошибка в ResNode')
+        # node.type.semantic_check(self, IdentScope(scope))
+        # node.node_type = node.type.type
+        # try:
+        #     node.name.node_ident = scope.add_ident(IdentDesc(node.name.name, node.type.type, ScopeType.LOCAL))
+        # except SemanticException:
+        #     raise node.name.semantic_error('Ошибка в ResNode')
+        i = 3
+        node.res.semantic_check(self, scope)
         node.node_type = TypeDesc.VOID
 
     @visitor.when(FuncDeclNode)
@@ -158,6 +192,10 @@ class SemanticChecker:
                 break
             param.semantic_check(self, scope)
             params.append(param.type.type)
+
+        if node.res is not None:
+            node.res.semantic_check(self, scope)
+
         type_ = TypeDesc(None, node.type.type, tuple(params))
         func_ident = IdentDesc(node.name.name, type_)
         scope.func = func_ident

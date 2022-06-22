@@ -1,3 +1,4 @@
+import argparse
 import program
 
 
@@ -6,7 +7,7 @@ def main():
        алг Func(арг цел n, рез цел res)
             нач
                 цел i
-                лог flag := не (3 > 2 и да) или не нет
+                лог flag := (3 > 2 и да) или нет
                 нц для i от 2 до n
                     если 2 < 3
                         то n := n + 0
@@ -42,11 +43,12 @@ def main():
             
         алг Func3(арг лог bool, вещ t, рез сим e)
             нач
+                цел q
                 нц для q от 1 до 2
                     если да и q = 1
                         то
                             цел i := 0
-                            нц пока нет или не (2 < i)
+                            нц пока нет или (2 < i)
                                 i = i + 1
                             кц
                             цел j := 11
@@ -56,7 +58,7 @@ def main():
                             кц_при  j > 0
                         иначе
                             цел i := 10
-                            нц пока нет или не (2 < i)
+                            нц пока нет или (2 < i)
                                 i = i + 10
                             кц
                             цел j := 110
@@ -78,7 +80,19 @@ def main():
     '''
 
     #print(*prog.tree, sep=os.linesep)
-    program.execute(prog3)
+
+    parser = argparse.ArgumentParser(description='Compiler demo program (msil)')
+    parser.add_argument('src', type=str, help='source code file')
+    parser.add_argument('--msil-only', default=False, action='store_true', help='pring only msil code (no ast)')
+    args = parser.parse_args()
+
+    with open(args.src, mode='r') as f:
+        src = f.read()
+
+    
+
+    # program.execute(prog)
+    program.execute(src, args.msil_only)
 
 
 if __name__ == "__main__":

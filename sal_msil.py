@@ -39,7 +39,10 @@ class MsilException(Exception):
 MSIL_TYPE_NAMES = {
     BaseType.VOID: 'void',
     BaseType.INT: 'int32',
-    BaseType.STR: 'string'
+    BaseType.STR: 'string',
+    BaseType.BOOL: 'bool',
+    BaseType.CHAR: 'char',
+    BaseType.FLOAT: 'float64'
 }
 
 
@@ -47,6 +50,8 @@ def find_vars_decls(node: AstNode) -> List[VarDeclNode]:
     var_nodes: List[VarDeclNode] = []
 
     def find(node: AstNode) -> None:
+        if node is None:
+            return
         for n in (node.children or []):
             if isinstance(n, VarDeclNode):
                 var_nodes.append(n)
@@ -107,7 +112,7 @@ class CodeGenerator:
         self.add(f'     ldc.i4 "{node.value}"')
 
     @visitor.when(IdentNode)
-    def msil_gen(self, node, IdentNode) -> None:
+    def msil_gen(self, node: IdentNode) -> None:
         if node.node_ident.scope == ScopeType.LOCAL:
             self.add('      ldloc', node.node_ident.index)
         elif node.node_ident.scope == ScopeType.PARAM:
@@ -117,6 +122,8 @@ class CodeGenerator:
     
     @visitor.when(AssignNode)
     def msil_gen(self, node: AssignNode) -> None:
+        if node is None:
+            return
         node.val.msil_gen(self)
         var = node.var
         if var.node_ident.scope == ScopeType.LOCAL:
@@ -130,7 +137,10 @@ class CodeGenerator:
     def msil_gen(self, node: VarDeclNode) -> None:
         for var in node.vars:
             if isinstance(var, AssignNode):
-                var.msil_gen(self)
+                if var.val is None:
+                    var.var.msil_gen(self)
+                else:
+                    var.msil_gen(self)
 
     @visitor.when(BinOpNode)
     def msil_gen(self, node: BinOpNode) -> None:
@@ -185,10 +195,10 @@ class CodeGenerator:
     @visitor.when(FuncDeclNode)
     def msil_gen(self, node:FuncDeclNode) -> None:
         params = ''
-        for p in node.params.children:
+        for p in node.params.vars:
             if len(params) > 0:
                 params += ', '
-            params += f'{MSIL_TYPE_NAMES[p.type.type.base_type]} {str(p.name.name)}'
+            params += f'{MSIL_TYPE_NAMES[p.type.type.base_type]} {str(p.vars[0].name)}'
         self.add(f' .method public static {MSIL_TYPE_NAMES[node.type.type.base_type]} {node.name}({params}) cil managed')
         self.add('  {')
         node.body.msil_gen(self)

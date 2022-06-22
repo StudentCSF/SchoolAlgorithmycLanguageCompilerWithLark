@@ -126,7 +126,9 @@ class MelASTBuilder(InlineTransformer):
         if item in ('true', 'false'):
             return lambda: BoolNode(item == 'true', loc=loc)
 
-        if item in ('mul', 'div', 'add', 'sub'):
+        if item in ('mul', 'div', 'add', 'sub',
+                    'gt', 'lt', 'equals', 'le', 'ge',
+                    'not', 'or', 'and'):
             def get_bin_op_node(*args):
                 op = BinOp[item.upper()]
                 return BinOpNode(op, *args, loc=loc)
@@ -138,21 +140,21 @@ class MelASTBuilder(InlineTransformer):
                 if len(args) == 2:
                     anode = AssignNode(args[0], args[1])
                 op = TypeNode(Type[item.upper()].value, *args, loc=loc)
-                return VarDeclNode(op, args[0], anode, loc=loc)
+                return VarDeclNode(op, args[0], loc=loc)
 
             return get_type_node
-        if item in ('gt', 'lt', 'equals', 'le', 'ge'):
-            def get_compare_op_node(*args):
-                op = CompareOp[item.upper()]
-                return CompareOpNode(op, *args, loc=loc)
+        # if item in ('gt', 'lt', 'equals', 'le', 'ge'):
+        #     def get_compare_op_node(*args):
+        #         op = CompareOp[item.upper()]
+        #         return CompareOpNode(op, *args, loc=loc)
 
-            return get_compare_op_node
-        if item in ('not', 'or', 'and'):
-            def get_log_op_node(*args):
-                op = LogOp[item.upper()]
-                return LogOpNode(op, *args, loc=loc)
+        #     return get_compare_op_node
+        # if item in ('not', 'or', 'and'):
+        #     def get_log_op_node(*args):
+        #         op = LogOp[item.upper()]
+        #         return LogOpNode(op, *args, loc=loc)
 
-            return get_log_op_node
+        #     return get_log_op_node
 
         # if item == 'var_decl':
         #     def get_var_decl_node(*args):
@@ -163,7 +165,8 @@ class MelASTBuilder(InlineTransformer):
 
         else:
             def get_node(*args):
-                cls = eval(''.join(x.capitalize() or '_' for x in item.split('_')) + 'Node')
+                cls = eval(
+                    ''.join(x.capitalize() or '_' for x in item.split('_')) + 'Node')
                 return cls(*args, loc=loc)
 
             return get_node

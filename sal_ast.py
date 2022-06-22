@@ -212,7 +212,7 @@ class LogOpNode(ExprNode):
         self.arg2 = arg2
 
     @property
-    def children(self) -> tuple['ValueNode', ...]:
+    def children(self) -> tuple[ValueNode, ...]:
         return (self.arg1, self.arg2) if self.op.value != 'не' else (self.arg1,)
 
     def __str__(self):
@@ -256,6 +256,8 @@ class AssignNode(ExprNode):
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
         self.var = var
+        if var.name == 'flag':
+            pass
         self.val = val
 
     @property
@@ -390,14 +392,22 @@ class Type(Enum):
 class VarDeclNode(StmtNode):
     def __init__(self, type_: TypeNode,
     # vars_: AssignNode,
-    *vars_: Union[IdentNode, 'AssignNode'], #
+    *vars_,
+    #Union[IdentNode, 'AssignNode'],
     # ident: IdentNode, assign: Optional[AssignNode] = None,
                  row: Optional[int] = None, col: Optional[int] = None, **props) -> None:
         super().__init__(row=row, col=col, **props)
         self.type = type_
         # self.ident = ident
         # self.assign = assign
-        self.vars = vars_
+        # self.vars = []
+        # self.vars.append(v for v in vars if v)
+        if isinstance(vars_[0], AssignNode) and vars_[0].val is None:
+            self.vars = vars_[0].var
+        else:
+            self.vars = vars_# if vars_[1].val is not None else vars_[0]
+        # for v in self.vars:
+
         # self.var = assign if assign is not None else ident
 
     @property
@@ -460,12 +470,12 @@ class FuncDeclNode(StmtNode):
             if params.__str__() == 'арг':
                 self.params = params
             elif params.__str__() == 'рез':
-                self.res = params.type
+                self.res = params
             else:
                 self.body = params
             if res is not None:
                 if res.__str__() == 'рез':
-                    self.res = res.type
+                    self.res = res
                 else:
                     self.body = res
                 if body is not None:

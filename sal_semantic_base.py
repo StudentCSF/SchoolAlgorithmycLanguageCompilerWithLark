@@ -18,6 +18,7 @@ class BinOp(Enum):
     EQUALS = '='
     AND = 'и'
     OR = 'или'
+    # NOT = 'не'
 
     def __str__(self):
         return self.value
